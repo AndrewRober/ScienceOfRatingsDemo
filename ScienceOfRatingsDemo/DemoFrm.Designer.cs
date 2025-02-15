@@ -82,12 +82,15 @@
             // 
             // pointsDgv
             // 
+            this.pointsDgv.AllowUserToAddRows = false;
+            this.pointsDgv.AllowUserToDeleteRows = false;
             this.pointsDgv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pointsDgv.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.pointsDgv.Location = new System.Drawing.Point(6, 19);
             this.pointsDgv.Name = "pointsDgv";
+            this.pointsDgv.ReadOnly = true;
             this.pointsDgv.Size = new System.Drawing.Size(374, 289);
             this.pointsDgv.TabIndex = 0;
             // 
