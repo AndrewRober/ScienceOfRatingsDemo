@@ -8,25 +8,6 @@ namespace RatingAnalysisLib
     {
         private static readonly Random random = new Random();
 
-        public static List<RatingDataPoint> GenerateRatings(
-            RatingTrend trend,
-            DateTime startTime,
-            TimeSpan interval,
-            int dataPoints)
-        {
-            List<RatingDataPoint> ratings = new List<RatingDataPoint>();
-            DateTime currentTime = startTime;
-
-            for (int i = 0; i < dataPoints; i++)
-            {
-                double rating = GenerateRating(trend, i, dataPoints);
-                ratings.Add(new RatingDataPoint(currentTime, Clamp(rating, 1.0, 10.0)));
-                currentTime = currentTime.Add(interval);
-            }
-
-            return ratings;
-        }
-
         public static List<RatingDataPoint> GenerateRatings(RatingTrend trend, DateTime startTime,
             TimeSpan interval, int dataPoints, WeightGenerationMethod weightMethod)
         {

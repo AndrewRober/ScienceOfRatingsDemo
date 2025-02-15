@@ -143,7 +143,7 @@
             this.dataPointsNumeric.Size = new System.Drawing.Size(62, 20);
             this.dataPointsNumeric.TabIndex = 16;
             this.dataPointsNumeric.Value = new decimal(new int[] {
-            100,
+            42,
             0,
             0,
             0});

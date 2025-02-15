@@ -265,10 +265,11 @@ namespace ScienceOfRatingsDemo
 
 
                 // Generate data points
-                var ratings = RatingDataGenerator.GenerateRatings(trend, startTime, interval, dataPoints);
+                var ratings = RatingDataGenerator.GenerateRatings(trend, startTime, interval, dataPoints, SelectedWeightMethod);
 
                 // Display in DataGridView
                 DisplayDataPoints(ratings);
+                chartPanel.Invalidate();
             }
         }
 
@@ -277,7 +278,7 @@ namespace ScienceOfRatingsDemo
             pointsDgv.Rows.Clear();
             foreach (var point in ratings)
             {
-                pointsDgv.Rows.Add(point.Timestamp, point.Rating);
+                pointsDgv.Rows.Add(point.Timestamp, point.Rating, point.Weight);
             }
         }
 
