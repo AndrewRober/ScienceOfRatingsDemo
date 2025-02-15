@@ -358,13 +358,14 @@ namespace ScienceOfRatingsDemo
             var dataPoints = pointsDgv.Rows.Cast<DataGridViewRow>()
                 .Select(r => new RatingDataPoint((DateTime)r.Cells[0].Value,
                 (double)r.Cells[1].Value, (double)r.Cells[2].Value)).ToList();
-            var SimpleAveragePoints = SimpleAverageCalculator.CalculateAverageOverTime(dataPoints);
-
+            var SimpleAveragePoints = SimpleAverageCalculator.ComputeAverageOverTime(dataPoints);
+            var WeightedAveragePoints = WeightedAverageCalculator.ComputeWeightedAverageOverTime(dataPoints);
 
 
             return new List<(List<RatingDataPoint>, AveragingMethod)>
             {
-                (SimpleAveragePoints, AveragingMethod.SimpleAverage)
+                (SimpleAveragePoints, AveragingMethod.SimpleAverage),
+                (WeightedAveragePoints, AveragingMethod.WeightedAverage)
             };
         }
     }
