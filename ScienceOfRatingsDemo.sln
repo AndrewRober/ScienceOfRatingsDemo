@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScienceOfRatingsDemo", "ScienceOfRatingsDemo\ScienceOfRatingsDemo.csproj", "{14B19C1E-9240-4040-BFAD-C825C2195CAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RatingAnalysisLib", "RatingAnalysisLib\RatingAnalysisLib.csproj", "{F3FBE66B-43E9-48B2-8337-8BCD35A58908}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RatingAnalysisLib", "RatingAnalysisLib\RatingAnalysisLib.csproj", "{9CC9CE0E-09C0-468D-9094-CFC58F63AD7F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{14B19C1E-9240-4040-BFAD-C825C2195CAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14B19C1E-9240-4040-BFAD-C825C2195CAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14B19C1E-9240-4040-BFAD-C825C2195CAD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F3FBE66B-43E9-48B2-8337-8BCD35A58908}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F3FBE66B-43E9-48B2-8337-8BCD35A58908}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F3FBE66B-43E9-48B2-8337-8BCD35A58908}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F3FBE66B-43E9-48B2-8337-8BCD35A58908}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9CC9CE0E-09C0-468D-9094-CFC58F63AD7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CC9CE0E-09C0-468D-9094-CFC58F63AD7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CC9CE0E-09C0-468D-9094-CFC58F63AD7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CC9CE0E-09C0-468D-9094-CFC58F63AD7F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
