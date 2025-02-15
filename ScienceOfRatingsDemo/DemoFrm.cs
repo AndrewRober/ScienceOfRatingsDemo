@@ -52,7 +52,6 @@ namespace ScienceOfRatingsDemo
             set
             {
                 _values = value;
-                chartPanel.Invalidate(); // Forces a repaint when data changes
             }
         }
 
@@ -200,7 +199,8 @@ namespace ScienceOfRatingsDemo
 
         private void AddDataPoint(Point clickPosition, double weight)
         {
-            if (Values == null) Values = new List<(List<RatingDataPoint>, AveragingMethod)>();
+            if (Values == null)
+                Values = new List<(List<RatingDataPoint>, AveragingMethod)>();
 
             Rectangle bounds = chartPanel.ClientRectangle;
             DateTime start = startTimePicker.Value;
@@ -216,12 +216,29 @@ namespace ScienceOfRatingsDemo
                 ((clickPosition.Y - ChartRenderer.MarginTop) / (double)(bounds.Height - ChartRenderer.AxisPaddingY - ChartRenderer.MarginTop) * 9.0);
             rating = Math.Round(Math.Max(1.0, Math.Min(10.0, rating)), 1); // Clamp to 1-10
 
-            // Add new point to the dataset
+            // Create a new rating data point
             var newPoint = new RatingDataPoint(timestamp, rating, weight);
 
-            // Add to DataGridView
-            pointsDgv.Rows.Add(timestamp, rating, weight);
+            // Insert into the DataGridView in sorted order
+            int insertIndex = pointsDgv.Rows.Cast<DataGridViewRow>()
+                                .Where(row => row.Cells["Timestamp"].Value != null)
+                                .TakeWhile(row => (DateTime)row.Cells["Timestamp"].Value < timestamp)
+                                .Count();
+
+            pointsDgv.Rows.Insert(insertIndex, timestamp, rating, weight);
+
+            // Ensure Values list is also sorted
+            if (!Values.Any(v => v.Item2 == AveragingMethod.SimpleAverage))
+                Values.Add((new List<RatingDataPoint>(), AveragingMethod.SimpleAverage));
+
+            var simpleAvgList = Values.First(v => v.Item2 == AveragingMethod.SimpleAverage).Item1;
+            simpleAvgList.Add(newPoint);
+            simpleAvgList.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
+
+            // Redraw chart after adding data
+            chartPanel.Invalidate();
         }
+
 
         private void GenerateBtn_Click(object sender, EventArgs e)
         {
@@ -293,13 +310,12 @@ namespace ScienceOfRatingsDemo
             }
         }
 
-        private void PlotRatings(List<RatingDataPoint> ratings)
-        {
-            // TO BE IMPLEMENTED (Panel details needed)
-        }
-
         private void visualizationPanel_Paint(object sender, PaintEventArgs e)
         {
+            //recalculate result
+            Values = CalculateAverages();
+
+
             Rectangle bounds = chartPanel.ClientRectangle;
 
             // Use selected start/end time to scale X-axis properly
@@ -322,12 +338,34 @@ namespace ScienceOfRatingsDemo
                 .Select(r => new RatingDataPoint((DateTime)r.Cells[0].Value, (double)r.Cells[1].Value, (double)r.Cells[2].Value)).ToList());
 
             // Draw computed trend lines
-            ChartRenderer.DrawTrendLines(e.Graphics, bounds, start, end, computedAverages, methodColors);
+            ChartRenderer.DrawTrendLines(
+                e.Graphics,
+                bounds,
+                start,
+                end,
+                computedAverages,
+                methodColors,
+                showTrendPoints: true
+            );
 
             // Pass correct legend parameters
             ChartRenderer.DrawLegend(e.Graphics, bounds, methodColors.ToDictionary(k => k.Key.ToString(), v => v.Value));
         }
 
+        private List<(List<RatingDataPoint>, AveragingMethod)> CalculateAverages()
+        {
+            var dataPoints = pointsDgv.Rows.Cast<DataGridViewRow>()
+                .Select(r => new RatingDataPoint((DateTime)r.Cells[0].Value,
+                (double)r.Cells[1].Value, (double)r.Cells[2].Value)).ToList();
+            var SimpleAveragePoints = SimpleAverageCalculator.CalculateAverageOverTime(dataPoints);
+
+
+
+            return new List<(List<RatingDataPoint>, AveragingMethod)>
+            {
+                (SimpleAveragePoints, AveragingMethod.SimpleAverage)
+            };
+        }
     }
 
 

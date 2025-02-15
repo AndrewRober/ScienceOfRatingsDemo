@@ -230,8 +230,15 @@ namespace ScienceOfRatingsDemo
         /// <param name="endTime">The ending DateTime for X-axis scaling.</param>
         /// <param name="computedDataSeries">A list of tuples containing computed rating data points and the corresponding averaging method.</param>
         /// <param name="methodColors">A dictionary mapping averaging methods to their respective colors.</param>
-        public static void DrawTrendLines(Graphics g, Rectangle bounds, DateTime startTime, DateTime endTime,
-            List<(List<RatingDataPoint>, AveragingMethod)> computedDataSeries, Dictionary<AveragingMethod, Color> methodColors)
+        public static void DrawTrendLines(
+           Graphics g,
+           Rectangle bounds,
+           DateTime startTime,
+           DateTime endTime,
+           List<(List<RatingDataPoint>, AveragingMethod)> computedDataSeries,
+           Dictionary<AveragingMethod, Color> methodColors,
+           bool showTrendPoints = true // Toggle to show actual computed average points
+       )
         {
             if (computedDataSeries == null || computedDataSeries.Count == 0)
                 return;
@@ -239,68 +246,181 @@ namespace ScienceOfRatingsDemo
             double totalDuration = (endTime - startTime).TotalSeconds; // X-axis range
             float drawableWidth = bounds.Width - AxisPaddingX - MarginRight;
 
-            // Store calculated trend points separately
-            Dictionary<AveragingMethod, List<Point>> trendLines = new Dictionary<AveragingMethod, List<Point>>();
-
             foreach (var series in computedDataSeries)
             {
-                List<RatingDataPoint> points = series.Item1;
+                List<RatingDataPoint> computedPoints = series.Item1.OrderBy(p => p.Timestamp).ToList();
                 AveragingMethod method = series.Item2;
 
-                // Get color for the trend line
-                Pen methodPen = new Pen(methodColors[method], 2);
+                if (computedPoints.Count < 2)
+                    continue; // Not enough points to draw a trend line
 
-                // Convert to screen points and strictly clip to grid
-                List<Point> trendPoints = points
-                    .Select(p => new Point(
-                        (int)Math.Max(bounds.Left + AxisPaddingX,
-                                      Math.Min(bounds.Right - MarginRight,
-                                               bounds.Left + AxisPaddingX +
-                                               (float)((p.Timestamp - startTime).TotalSeconds / totalDuration * drawableWidth))),
-                        (int)Math.Max(bounds.Top + MarginTop,
-                                      Math.Min(bounds.Bottom - AxisPaddingY,
-                                               bounds.Bottom - (float)((p.Rating - 1) / 9.0 * bounds.Height)))
+                // Convert computed trend points to screen coordinates
+                List<PointF> trendScreenPoints = computedPoints
+                    .Select(p => new PointF(
+                        (float)Math.Max(bounds.Left + AxisPaddingX,
+                            Math.Min(bounds.Right - MarginRight,
+                                bounds.Left + AxisPaddingX +
+                                (float)((p.Timestamp - startTime).TotalSeconds / totalDuration * drawableWidth))),
+                        (float)Math.Max(bounds.Top + MarginTop,
+                            Math.Min(bounds.Bottom - AxisPaddingY,
+                                bounds.Bottom - (float)((p.Rating - 1) / 9.0 * bounds.Height)))
                     )).ToList();
 
-                // Remove first and last points if they go out of bounds
-                trendPoints = trendPoints.Where(p => p.X >= bounds.Left + AxisPaddingX && p.X <= bounds.Right - MarginRight).ToList();
-
-                // Store trend points for drawing later
-                if (trendPoints.Count > 1) // Avoid drawing invalid points
-                    trendLines[method] = trendPoints;
-            }
-
-            // Now draw all trend lines (ensuring they don't extend past the grid)
-            foreach (var method in trendLines.Keys)
-            {
                 Pen methodPen = new Pen(methodColors[method], 2);
-                DrawSmoothCurve(g, methodPen, trendLines[method]);
+                Brush pointBrush = new SolidBrush(methodColors[method]);
+
+                // Draw the smooth trend curve
+                DrawSmoothCatmullRomCurve(g, methodPen, trendScreenPoints);
+
+                // Optionally show the actual computed trend points
+                if (showTrendPoints)
+                {
+                    foreach (var p in trendScreenPoints)
+                    {
+                        g.FillEllipse(pointBrush, p.X - 3, p.Y - 3, 6, 6); // Small colored circles for trend points
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Draws a **Catmull-Rom** style smooth curve between computed average points.
+        /// This ensures a **natural transition** between points without excessive loops.
+        /// </summary>
+        /// <param name="g">Graphics object for drawing.</param>
+        /// <param name="pen">Pen used to draw the trend line.</param>
+        /// <param name="points">List of computed trend points in screen coordinates.</param>
+        private static void DrawSmoothCatmullRomCurve(Graphics g, Pen pen, List<PointF> points)
+        {
+            if (points.Count < 2)
+                return;
+
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddLines(points.ToArray()); // Simple smoothing without over-adjustments
+                g.DrawPath(pen, path);
             }
         }
 
 
         /// <summary>
-        /// Draws a smooth interpolated curve connecting the given list of points.
-        /// Uses cubic Bézier interpolation to create a smooth transition.
+        /// Draws a balanced smooth curve that moves **between** computed points instead of through them.
         /// </summary>
-        /// <param name="g">The Graphics object used for drawing.</param>
-        /// <param name="pen">The pen used to draw the curve.</param>
-        /// <param name="points">A list of points to be connected by the curve.</param>
-        private static void DrawSmoothCurve(Graphics g, Pen pen, List<Point> points)
+        /// <param name="g">Graphics object for drawing.</param>
+        /// <param name="pen">Pen used to draw the trend line.</param>
+        /// <param name="points">List of computed trend points in screen coordinates.</param>
+        private static void DrawBalancedCurve(Graphics g, Pen pen, List<PointF> points)
+        {
+            if (points.Count < 2)
+                return;
+
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                for (int i = 0; i < points.Count - 1; i++)
+                {
+                    PointF p0 = (i == 0) ? points[i] : points[i - 1]; // Previous point
+                    PointF p1 = points[i];   // Current point
+                    PointF p2 = points[i + 1]; // Next point
+                    PointF p3 = (i == points.Count - 2) ? points[i + 1] : points[i + 2]; // Future point
+
+                    // Compute control points for Bezier-like smoothness
+                    PointF control1 = new PointF((p0.X + p1.X) / 2, (p0.Y + p1.Y) / 2);
+                    PointF control2 = new PointF((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
+                    PointF control3 = new PointF((p2.X + p3.X) / 2, (p2.Y + p3.Y) / 2);
+
+                    path.AddBezier(control1, p1, p2, control3);
+                }
+
+                g.DrawPath(pen, path);
+            }
+        }
+
+
+        /// <summary>
+        /// Draws a smooth curve that connects computed trend points.
+        /// </summary>
+        /// <param name="g">Graphics object for drawing.</param>
+        /// <param name="pen">Pen used to draw the trend line.</param>
+        /// <param name="points">List of computed trend points in screen coordinates.</param>
+        private static void DrawSimpleCurveBetweenPoints(Graphics g, Pen pen, List<PointF> points)
+        {
+            if (points.Count < 2)
+                return;
+
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddCurve(points.ToArray(), 0.4f);  // Moderate tension for natural curve
+                g.DrawPath(pen, path);
+            }
+        }
+
+
+
+        /// <summary>
+        /// Downsamples data to avoid excessive interpolation and jagged curves.
+        /// </summary>
+        /// <param name="dataPoints">Original list of computed trend points.</param>
+        /// <param name="maxPoints">Maximum number of key points to retain.</param>
+        /// <returns>Reduced list of key trend points.</returns>
+        private static List<RatingDataPoint> DownsampleData(List<RatingDataPoint> dataPoints, int maxPoints)
+        {
+            if (dataPoints.Count <= maxPoints)
+                return dataPoints; // No need to downsample if within limit
+
+            int step = dataPoints.Count / maxPoints;
+            List<RatingDataPoint> downsampled = new List<RatingDataPoint>();
+
+            for (int i = 0; i < dataPoints.Count; i += step)
+            {
+                downsampled.Add(dataPoints[i]);
+            }
+
+            // Ensure last point is included
+            if (!downsampled.Contains(dataPoints.Last()))
+                downsampled.Add(dataPoints.Last());
+
+            return downsampled;
+        }
+
+        /// <summary>
+        /// Draws a smooth spline curve through the given trend points.
+        /// </summary>
+        /// <param name="g">Graphics object to draw on.</param>
+        /// <param name="pen">Pen used for the curve.</param>
+        /// <param name="points">List of screen coordinates for trend points.</param>
+        private static void DrawSmoothSplineCurve(Graphics g, Pen pen, List<PointF> points)
         {
             if (points.Count < 3)
             {
-                // If not enough points for a curve, fallback to straight lines
+                // If not enough points for spline, fallback to straight lines
                 g.DrawLines(pen, points.ToArray());
                 return;
             }
 
             using (GraphicsPath path = new GraphicsPath())
             {
-                path.AddCurve(points.ToArray(), 0.5f);  // Adjust tension for smoothness
+                path.AddCurve(points.ToArray(), 0.4f);  // Adjust tension for smoothness
                 g.DrawPath(pen, path);
             }
         }
+
+        /// <summary>
+        /// Draws a segmented trend line (useful for step-like averaging methods).
+        /// </summary>
+        /// <param name="g">Graphics object to draw on.</param>
+        /// <param name="pen">Pen used for drawing.</param>
+        /// <param name="points">List of screen coordinates for trend points.</param>
+        private static void DrawSegmentedTrendLine(Graphics g, Pen pen, List<PointF> points)
+        {
+            if (points.Count < 2)
+                return;
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                g.DrawLine(pen, points[i - 1], points[i]);
+            }
+        }
+
     }
 
 
