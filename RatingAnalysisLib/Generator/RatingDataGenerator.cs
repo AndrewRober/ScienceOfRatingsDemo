@@ -27,6 +27,24 @@ namespace RatingAnalysisLib
             return ratings;
         }
 
+        public static List<RatingDataPoint> GenerateRatings(RatingTrend trend, DateTime startTime,
+            TimeSpan interval, int dataPoints, WeightGenerationMethod weightMethod)
+        {
+            List<RatingDataPoint> ratings = new List<RatingDataPoint>();
+            DateTime currentTime = startTime;
+
+            for (int i = 0; i < dataPoints; i++)
+            {
+                double rating = GenerateRating(trend, i, dataPoints);
+                double weight = GenerateWeight(rating, i, dataPoints, weightMethod);
+                ratings.Add(new RatingDataPoint(currentTime, Clamp(rating, 1.0, 10.0), weight));
+                currentTime = currentTime.Add(interval);
+            }
+
+            return ratings;
+        }
+
+
         private static double GenerateRating(RatingTrend trend, int t, int total)
         {
             double rating;
@@ -71,6 +89,36 @@ namespace RatingAnalysisLib
             return Math.Round(rating, 1); // Ensure single precision (1 decimal place)
         }
 
+        public static double GenerateWeight(double rating, int t, int total, WeightGenerationMethod method)
+        {
+            double baseWeight = random.NextDouble() * 4 + 1; // Random baseline weight (1.0 - 5.0)
+
+            switch (method)
+            {
+                case WeightGenerationMethod.HighRatingMoreWeight:
+                    baseWeight += (rating - 1) / 9 * 5; // More weight to higher ratings
+                    break;
+
+                case WeightGenerationMethod.LowRatingMoreWeight:
+                    baseWeight += (10 - rating) / 9 * 5; // More weight to lower ratings
+                    break;
+
+                case WeightGenerationMethod.RecentMoreWeight:
+                    baseWeight += ((double)(total - t) / total) * 5; // Newer reviews get more weight
+                    break;
+
+                case WeightGenerationMethod.OlderMoreWeight:
+                    baseWeight += ((double)t / total) * 5; // Older reviews get more weight
+                    break;
+
+                default: // Random (default)
+                    break;
+            }
+
+            return Math.Round(baseWeight, 2);
+        }
+
+
 
         private static double Clamp(double value, double min, double max)
         {
@@ -78,4 +126,6 @@ namespace RatingAnalysisLib
         }
 
     }
+
+
 }
