@@ -358,16 +358,31 @@ namespace ScienceOfRatingsDemo
             var dataPoints = pointsDgv.Rows.Cast<DataGridViewRow>()
                 .Select(r => new RatingDataPoint((DateTime)r.Cells[0].Value,
                 (double)r.Cells[1].Value, (double)r.Cells[2].Value)).ToList();
+
+            if (!dataPoints.Any())
+                return null;
+
             var SimpleAveragePoints = SimpleAverageCalculator.ComputeAverageOverTime(dataPoints);
             var WeightedAveragePoints = WeightedAverageCalculator.ComputeWeightedAverageOverTime(dataPoints);
             var BayesianAveragePoints = BayesianAverageCalculator.ComputeBayesianAverageOverTime(dataPoints, BayesianPrior, BayesianM);
+            var MedianScorePoints = MedianScoreCalculator.ComputeMedianScoreOverTime(dataPoints);
+            var TruncatedMeanPoints = TruncatedMeanCalculator.ComputeTruncatedMeanOverTime(dataPoints, TrimPercent);
+            var ExponentialMovingAveragePoints = ExponentialMovingAverageCalculator.ComputeExponentialMovingAverageOverTime(dataPoints, EmaAlpha);
 
             return new List<(List<RatingDataPoint>, AveragingMethod)>
             {
                 (SimpleAveragePoints, AveragingMethod.SimpleAverage),
                 (WeightedAveragePoints, AveragingMethod.WeightedAverage),
-                (BayesianAveragePoints, AveragingMethod.BayesianAverage)
+                (BayesianAveragePoints, AveragingMethod.BayesianAverage),
+                (MedianScorePoints, AveragingMethod.MedianScore),
+                (TruncatedMeanPoints, AveragingMethod.TruncatedMean),
+                (ExponentialMovingAveragePoints, AveragingMethod.ExponentialMovingAverage)
             };
+        }
+
+        private void bayesianPriorNumeric_ValueChanged(object sender, EventArgs e)
+        {
+            chartPanel.Invalidate();
         }
     }
 
