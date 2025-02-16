@@ -31,7 +31,7 @@ namespace ScienceOfRatingsDemo
         public double EmaAlpha { get; set; } = 0.2;  // Weight of recent reviews
 
         // Wilson Score
-        public double WilsonConfidence { get; set; } = 1.96;  // 95% Confidence
+        public double WilsonConfidence { get; set; } = 0.95;  // 95% Confidence
 
         // Recency Adjustment
         public double RecencyLambda { get; set; } = 0.02;  // Decay rate 
@@ -128,14 +128,14 @@ namespace ScienceOfRatingsDemo
             };
 
             // Wilson Score Interval Controls
-            wilsonConfidenceNumeric.Minimum = 0.5M;
-            wilsonConfidenceNumeric.Maximum = 3.0M;
+            wilsonConfidenceNumeric.Minimum = 50.0M;
+            wilsonConfidenceNumeric.Maximum = 99.99M;
             wilsonConfidenceNumeric.Increment = 0.1M;
             wilsonConfidenceNumeric.DecimalPlaces = 2;
-            wilsonConfidenceNumeric.Value = (decimal)WilsonConfidence;
+            wilsonConfidenceNumeric.Value = (decimal)WilsonConfidence*100;
             wilsonConfidenceNumeric.ValueChanged += (s, e) =>
             {
-                WilsonConfidence = (double)wilsonConfidenceNumeric.Value;
+                WilsonConfidence = (double)wilsonConfidenceNumeric.Value/100;
             };
 
             // Recency Decay Control
@@ -368,6 +368,7 @@ namespace ScienceOfRatingsDemo
             var MedianScorePoints = MedianScoreCalculator.ComputeMedianScoreOverTime(dataPoints);
             var TruncatedMeanPoints = TruncatedMeanCalculator.ComputeTruncatedMeanOverTime(dataPoints, TrimPercent);
             var ExponentialMovingAveragePoints = ExponentialMovingAverageCalculator.ComputeExponentialMovingAverageOverTime(dataPoints, EmaAlpha);
+            var WilsonScoreIntervalPoints = WilsonScoreCalculator.ComputeWilsonScoreOverTime(dataPoints, WilsonConfidence);
 
             return new List<(List<RatingDataPoint>, AveragingMethod)>
             {
@@ -376,7 +377,8 @@ namespace ScienceOfRatingsDemo
                 (BayesianAveragePoints, AveragingMethod.BayesianAverage),
                 (MedianScorePoints, AveragingMethod.MedianScore),
                 (TruncatedMeanPoints, AveragingMethod.TruncatedMean),
-                (ExponentialMovingAveragePoints, AveragingMethod.ExponentialMovingAverage)
+                (ExponentialMovingAveragePoints, AveragingMethod.ExponentialMovingAverage),
+                (WilsonScoreIntervalPoints, AveragingMethod.WilsonScoreInterval)
             };
         }
 

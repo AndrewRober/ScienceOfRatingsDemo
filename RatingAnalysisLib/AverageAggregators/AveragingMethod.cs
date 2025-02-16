@@ -1,4 +1,6 @@
-﻿using System;
+﻿//using MathNet.Numerics.Distributions;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -319,6 +321,89 @@ namespace RatingAnalysisLib.AverageAggregators
         }
     }
 
+    /// <summary>
+    /// Computes a Wilson Score confidence interval lower bound to rank ratings with uncertainty adjustment.
+    /// </summary>
+    public static class WilsonScoreCalculator
+    {
+        /// <summary>
+        /// Computes the Wilson score lower bound for a given dataset.
+        /// </summary>
+        /// <param name="positiveRatings">Number of positive ratings (e.g., 4-5 stars).</param>
+        /// <param name="totalRatings">Total number of ratings.</param>
+        /// <param name="confidenceLevel">Confidence level (e.g., 0.95 for 95%).</param>
+        /// <returns>Wilson score lower bound.</returns>
+        public static double ComputeWilsonScore(int positiveRatings, int totalRatings, double confidenceLevel = 0.95)
+        {
+            if (totalRatings == 0) return 0; // No data → Worst possible score
+
+            // Get Z-score for confidence level
+            double z = GetZScore(confidenceLevel);
+
+            // Proportion of positive ratings
+            double p = (double)positiveRatings / totalRatings;
+
+            // Wilson lower bound formula
+            double numerator = p + (z * z) / (2 * totalRatings) - z * Math.Sqrt((p * (1 - p) + (z * z) / (4 * totalRatings)) / totalRatings);
+            double denominator = 1 + (z * z) / totalRatings;
+
+            return numerator / denominator;
+        }
+
+        /// <summary>
+        /// Computes Wilson scores over time for trend visualization.
+        /// </summary>
+        /// <param name="dataPoints">List of rating data points.</param>
+        /// <param name="confidenceLevel">Confidence level (e.g., 0.95 for 95%).</param>
+        /// <returns>List of Wilson score points over time.</returns>
+        public static List<RatingDataPoint> ComputeWilsonScoreOverTime(List<RatingDataPoint> dataPoints, double confidenceLevel = 0.95)
+        {
+            List<RatingDataPoint> result = new List<RatingDataPoint>();
+            int totalRatings = 0, positiveRatings = 0;
+
+            foreach (var point in dataPoints.OrderBy(p => p.Timestamp))
+            {
+                totalRatings++;
+                if (point.Rating >= 7) // Assuming 7+ is a "positive" rating
+                    positiveRatings++;
+
+                double wilsonScore = ComputeWilsonScore(positiveRatings, totalRatings, confidenceLevel);
+                result.Add(new RatingDataPoint(point.Timestamp, wilsonScore * 10, point.Weight)); // Rescale Wilson score (0-1) → (0-10)
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the Z-score (critical value) for a given confidence level.
+        /// </summary>
+        /// <param name="confidenceLevel">Confidence level (e.g., 0.95 for 95%).</param>
+        /// <returns>Corresponding Z-score.</returns>
+        public static double GetZScore(double confidenceLevel)
+        {
+            //return Normal.InvCDF(0, 1, 1 - (1 - confidenceLevel) / 2);
+            return ApproximateZScore(confidenceLevel);
+        }
+
+        public static double ApproximateZScore(double confidenceLevel)
+        {
+            if (confidenceLevel <= 0 || confidenceLevel >= 1)
+                throw new ArgumentException("Confidence level must be between 0 and 1 (e.g., 0.95 for 95%)");
+
+            // Approximate z-score using Beasley-Springer-Moro method
+            double[] coefficients = { 2.515517, 0.802853, 0.010328 };
+            double[] denominators = { 1.432788, 0.189269, 0.001308 };
+
+            double p = 1 - (1 + confidenceLevel) / 2; // Tail probability
+            double t = Math.Sqrt(-2 * Math.Log(p)); // Transformation
+
+            double numerator = (coefficients[0] + coefficients[1] * t + coefficients[2] * t * t);
+            double denominator = (1 + denominators[0] * t + denominators[1] * t * t + denominators[2] * t * t * t);
+
+            return t - (numerator / denominator);
+        }
+
+    }
 
 
 }

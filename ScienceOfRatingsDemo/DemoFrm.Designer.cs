@@ -552,6 +552,7 @@
             // 
             // groupBox5
             // 
+            this.groupBox5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.groupBox5.Controls.Add(this.checkBox10);
             this.groupBox5.Controls.Add(this.checkBox9);
             this.groupBox5.Controls.Add(this.checkBox8);
@@ -567,7 +568,7 @@
             this.groupBox5.Size = new System.Drawing.Size(451, 136);
             this.groupBox5.TabIndex = 7;
             this.groupBox5.TabStop = false;
-            this.groupBox5.Text = "groupBox5";
+            this.groupBox5.Text = "Chart display settings";
             // 
             // checkBox1
             // 
