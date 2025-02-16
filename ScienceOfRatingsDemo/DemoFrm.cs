@@ -360,12 +360,13 @@ namespace ScienceOfRatingsDemo
                 (double)r.Cells[1].Value, (double)r.Cells[2].Value)).ToList();
             var SimpleAveragePoints = SimpleAverageCalculator.ComputeAverageOverTime(dataPoints);
             var WeightedAveragePoints = WeightedAverageCalculator.ComputeWeightedAverageOverTime(dataPoints);
-
+            var BayesianAveragePoints = BayesianAverageCalculator.ComputeBayesianAverageOverTime(dataPoints, BayesianPrior, BayesianM);
 
             return new List<(List<RatingDataPoint>, AveragingMethod)>
             {
                 (SimpleAveragePoints, AveragingMethod.SimpleAverage),
-                (WeightedAveragePoints, AveragingMethod.WeightedAverage)
+                (WeightedAveragePoints, AveragingMethod.WeightedAverage),
+                (BayesianAveragePoints, AveragingMethod.BayesianAverage)
             };
         }
     }

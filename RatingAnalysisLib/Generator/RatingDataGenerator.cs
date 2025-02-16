@@ -70,34 +70,43 @@ namespace RatingAnalysisLib
             return Math.Round(rating, 1); // Ensure single precision (1 decimal place)
         }
 
+        /// <summary>
+        /// Generates a weight for a rating based on the selected weight generation method.
+        /// </summary>
+        /// <param name="rating">The rating value (1-10).</param>
+        /// <param name="t">The index of the current rating in the series.</param>
+        /// <param name="total">The total number of ratings.</param>
+        /// <param name="method">The weight generation method.</param>
+        /// <returns>The generated weight, rounded to two decimal places.</returns>
         public static double GenerateWeight(double rating, int t, int total, WeightGenerationMethod method)
         {
-            double baseWeight = random.NextDouble() * 4 + 1; // Random baseline weight (1.0 - 5.0)
+            double baseWeight = random.NextDouble() * 5 + 1; // Random baseline weight (1.0 - 6.0)
 
             switch (method)
             {
                 case WeightGenerationMethod.HighRatingMoreWeight:
-                    baseWeight += (rating - 1) / 9 * 5; // More weight to higher ratings
+                    baseWeight += (rating - 1) / 9 * 4; // More weight to higher ratings
                     break;
 
                 case WeightGenerationMethod.LowRatingMoreWeight:
-                    baseWeight += (10 - rating) / 9 * 5; // More weight to lower ratings
+                    baseWeight += (10 - rating) / 9 * 4; // More weight to lower ratings
                     break;
 
                 case WeightGenerationMethod.RecentMoreWeight:
-                    baseWeight += ((double)(total - t) / total) * 5; // Newer reviews get more weight
+                    baseWeight += ((double)(total - t) / total) * 4; // Newer reviews get more weight
                     break;
 
                 case WeightGenerationMethod.OlderMoreWeight:
-                    baseWeight += ((double)t / total) * 5; // Older reviews get more weight
+                    baseWeight += ((double)t / total) * 4; // Older reviews get more weight
                     break;
 
                 default: // Random (default)
                     break;
             }
 
-            return Math.Round(baseWeight, 2);
+            return Math.Round(Math.Min(baseWeight, 10.0), 2); // Ensure weight doesn't exceed 10
         }
+
 
 
 

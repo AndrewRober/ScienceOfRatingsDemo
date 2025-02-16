@@ -106,6 +106,56 @@ namespace RatingAnalysisLib.AverageAggregators
         }
     }
 
+    /// <summary>
+    /// Computes the Bayesian Average to prevent small review counts from skewing results.
+    /// Uses a prior belief and a minimum number of reviews to balance influence.
+    /// </summary>
+    public static class BayesianAverageCalculator
+    {
+        /// <summary>
+        /// Computes the Bayesian Average for a given set of rating data points.
+        /// </summary>
+        /// <param name="dataPoints">List of rating data points.</param>
+        /// <param name="prior">The prior expectation (initial assumed average).</param>
+        /// <param name="m">The weight of the prior (number of equivalent prior votes).</param>
+        /// <returns>The computed Bayesian Average.</returns>
+        public static double ComputeBayesianAverage(List<RatingDataPoint> dataPoints, double prior, double m)
+        {
+            if (dataPoints == null || dataPoints.Count == 0)
+                return prior; // Return prior if no data is available
+
+            double weightedSum = dataPoints.Sum(p => p.Rating * p.Weight);
+            double totalWeight = dataPoints.Sum(p => p.Weight);
+
+            return (weightedSum + (prior * m)) / (totalWeight + m);
+        }
+
+        /// <summary>
+        /// Computes the Bayesian Average over time, generating a trend of Bayesian-adjusted scores.
+        /// </summary>
+        /// <param name="dataPoints">List of rating data points.</param>
+        /// <param name="prior">The prior expectation (initial assumed average).</param>
+        /// <param name="m">The weight of the prior (number of equivalent prior votes).</param>
+        /// <returns>A list of Bayesian Average points computed at each timestamp.</returns>
+        public static List<RatingDataPoint> ComputeBayesianAverageOverTime(List<RatingDataPoint> dataPoints, double prior, double m)
+        {
+            if (dataPoints == null || dataPoints.Count == 0)
+                return new List<RatingDataPoint>();
+
+            List<RatingDataPoint> result = new List<RatingDataPoint>();
+            List<RatingDataPoint> accumulatedData = new List<RatingDataPoint>();
+
+            foreach (var point in dataPoints.OrderBy(p => p.Timestamp))
+            {
+                accumulatedData.Add(point);
+                double avg = ComputeBayesianAverage(accumulatedData, prior, m);
+                result.Add(new RatingDataPoint(point.Timestamp, avg, point.Weight));
+            }
+
+            return result;
+        }
+    }
+
 
 
 }
